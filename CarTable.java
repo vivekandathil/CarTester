@@ -1,3 +1,6 @@
+package ics4u.car;
+
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -38,6 +41,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -60,9 +64,12 @@ public class CarTable extends Application {
     final static String host = "https://api.cognitive.microsoft.com";
     final static String path = "/bing/v5.0/images/search";
     static String searchTerm = "";
+    static String modelName = "";
     
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
+    static Label status;
+    static Tab tC;
 
     //I got this function from the Bing API documentation
     private static SearchResults SearchImages (String searchQuery) throws Exception 
@@ -125,18 +132,16 @@ public class CarTable extends Application {
  
     }
  
-    private final TableView<Car> tableView = new TableView<>();
+    private static final TableView<Car> tableView = new TableView<>();
  
-    private final ObservableList<Car> dataList
+    private static final ObservableList<Car> dataList
             = FXCollections.observableArrayList();
     
-    private Car car;
+    private static Car car;
  
 	@Override
     public void start(Stage primaryStage) 
 	{
-		//searchGoogle();
-		
         primaryStage.setTitle("The Car Catalog!");
         
 		//There will be a tab for selecting a car, and one for displaying it's properties.
@@ -146,7 +151,7 @@ public class CarTable extends Application {
 		createMainMenu(tA);
 		
 		Tab tB = new Tab("Select a car");
-		Tab tC = new Tab("Purchase");
+		tC = new Tab("Purchase");
  
         Group root = new Group();
  
@@ -163,12 +168,21 @@ public class CarTable extends Application {
                 new PropertyValueFactory<>("model"));
  
         tableView.setItems(dataList);
-        tableView.getColumns().addAll(
-                columnF1, columnF2, columnF3);
+        tableView.getColumns().addAll(columnF1, columnF2, columnF3);
+        
+        tableView.setRowFactory( tv -> {
+            TableRow<Car> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                	buttonAction();
+                }
+            });
+            return row ;
+        });
         
         TextField filterField = new TextField();
         
-        Label status = new Label("Awaiting selection\nPress button once finished.");
+        status = new Label("Awaiting selection\nPress button once finished.");
         
         FilteredList<Car> filteredData = new FilteredList<>(dataList, p -> true);
         
@@ -180,36 +194,7 @@ public class CarTable extends Application {
         //For testing purposes I will be printing all the selected data in the console
         get.setOnAction((ActionEvent ae) -> 
         {
-        	pb.setProgress(0);
-        	
-        	if (tableView.getSelectionModel().getSelectedItem() == null)
-        	{
-        		status.setText("No cars selected");
-        	}
-        	else
-        	{
-            	//Instantiates a car object based on the selected table value
-            	car = tableView.getSelectionModel().getSelectedItem();
-            	
-            	//Use get property methods to print out car data
-            	String modelName = car.getYear() + " " + car.getMake() + " " + car.getModel();
-            	
-            	//Tell user that the search function is being called
-            	status.setText(modelName + " selected\nSearching web for image...");
-            	
-            	searchTerm = modelName;
-            	
-            	String url = search(status);
-            	
-            	displayCar = new ImageView(new Image(url));
-            	Label stats = new Label(modelName + "\n");
-            	
-            	VBox img = new VBox(displayCar, stats);
-                
-                tC.setContent(img);
-                
-            	System.out.println("You selected a " + modelName);
-        	}
+        	buttonAction();
         });
         
         //****** FILTERING TEXT IN THE TABLE VIEW ******
@@ -253,7 +238,7 @@ public class CarTable extends Application {
         tableView.setItems(sortedData);
  
         //Vertical container to store the table
-        VBox hbox = new VBox(filterField, get/*, pb, status*/);
+        VBox hbox = new VBox(filterField, get, pb, status);
         hbox.setSpacing(10);
         
         HBox vBox = new HBox();
@@ -273,8 +258,6 @@ public class CarTable extends Application {
         primaryStage.show();
  
         readCSV();
-        
-
     }
  
     private void readCSV() 
@@ -312,6 +295,40 @@ public class CarTable extends Application {
         {
             Logger.getLogger(CarTester.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private static void buttonAction()
+    {
+    	pb.setProgress(0);
+    	
+    	if (tableView.getSelectionModel().getSelectedItem() == null)
+    	{
+    		status.setText("No cars selected");
+    	}
+    	else
+    	{
+        	//Instantiates a car object based on the selected table value
+        	car = tableView.getSelectionModel().getSelectedItem();
+        	
+        	//Use get property methods to print out car data
+        	modelName = car.getYear() + " " + car.getMake() + " " + car.getModel();
+        	
+        	//Tell user that the search function is being called
+        	status.setText(modelName + " selected\nSearching web for image...");
+        	
+        	searchTerm = modelName;
+        	
+        	String url = search(status);
+        	
+        	displayCar = new ImageView(new Image(url));
+        	Label stats = new Label(modelName + "\n");
+        	
+        	VBox img = new VBox(displayCar, stats);
+            
+            tC.setContent(img);
+            
+        	System.out.println("You selected a " + modelName);
+    	}
     }
     
     public static void createMainMenu(Tab t)
