@@ -33,7 +33,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -73,6 +76,7 @@ public class CarTable extends Application {
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
     static Label status;
+    static TabPane layout;
     static Tab tC;
 
     //I got this function from the Bing API documentation
@@ -149,13 +153,22 @@ public class CarTable extends Application {
         primaryStage.setTitle("The Car Catalog!");
         
 		//There will be a tab for selecting a car, and one for displaying it's properties.
-		TabPane layout = new TabPane();
+		layout = new TabPane();
 		Tab tA = new Tab("Main Menu");
 		
 		createMainMenu(tA);
 		
 		Tab tB = new Tab("Select a car");
 		tC = new Tab("Purchase");
+		
+		//This resets all components when the tab is entered
+	    tB.setOnSelectionChanged(event -> {
+	        if (tB.isSelected()) {
+	        	pb.setProgress(0);
+	        	status.setText("Awaiting selection\nPress button or double click cell once finished.\n\n"
+	        			+ "COLOUR SELECTION\n(Optional, may not always return desired colour)");
+	        }
+	    });
  
         Group root = new Group();
         
@@ -189,7 +202,8 @@ public class CarTable extends Application {
         
         TextField filterField = new TextField();
         
-        status = new Label("Awaiting selection\nPress button once finished.");
+        status = new Label("Awaiting selection\nPress button or double click cell once finished.\n\nCOLOUR SELECTION\n"
+        		+ "(Optional, may not always return desired colour)");
         status.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
         
         FilteredList<Car> filteredData = new FilteredList<>(dataList, p -> true);
@@ -248,11 +262,12 @@ public class CarTable extends Application {
         
         //**** SELECTING A COLOUR ****
         final String[][] palette = {
-        		{"black", "#000000"},
-                {"blue", "#0000ff"},
-        		{"brown", "#a52a2a"},
-        		{"red", "#dc143c"},
-        		{"green", "#008000"}
+        		{"BLACK", "#000000"},
+                {"BLUE", "#0000ff"},
+                {"WHITE", "#ffffff"},
+        		{"RED", "#dc143c"},
+        		{"GREEN", "#008000"},
+        		{"ORANGE", "#ffa500"}
         };
         
         //I imported a colour chooser object from github to allow the user to specify the car colour
@@ -260,7 +275,9 @@ public class CarTable extends Application {
         
         // monitor the color chooser's chosen color and respond to it.
         colorChooser.chosenColorProperty().addListener(new ChangeListener<Color>() {
-        	@Override public void changed(ObservableValue<? extends Color> observableValue, Color oldColor, Color newColor) {
+        	@Override public void changed(ObservableValue<? extends Color> observableValue, Color oldColor, Color newColor) 
+        	{
+        		//Store colour string in colour variable, this will be used in the search query
         		colour = colorChooser.getChosenColorName();
         	}
         });
@@ -282,7 +299,7 @@ public class CarTable extends Application {
 		
 		layout.getTabs().addAll(tA, tB, tC);
  
-        primaryStage.setScene(new Scene(layout, 600, 500));
+        primaryStage.setScene(new Scene(layout, 700, 500));
         primaryStage.show();
  
         readCSV();
@@ -357,6 +374,28 @@ public class CarTable extends Application {
             
         	System.out.println("You selected a " + modelName);
     	}
+    	
+    	status.setText("Success! Switching to next tab....");
+    	
+        Task<Void> sleeper = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                try {
+                	
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                return null;
+            }
+        };
+        sleeper.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent event) 
+            {
+            	layout.getSelectionModel().select(tC);
+            }
+        });
+        new Thread(sleeper).start();
     }
     
     public static void createMainMenu(Tab t)
@@ -437,7 +476,6 @@ public class CarTable extends Application {
         
         return resultURL;  
     }  
- 
 }
 
 //Container class for search results encapsulates relevant headers and JSON data
