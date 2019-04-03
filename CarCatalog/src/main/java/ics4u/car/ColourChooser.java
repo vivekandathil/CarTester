@@ -79,7 +79,7 @@ class ColorChooser extends VBox {
 	    {"slategrey", "#708090"},{"snow", "#fffafa"},{"springgreen", "#00ff7f"},{"steelblue", "#4682b4"},
 	    {"tan", "#d2b48c"},{"teal", "#008080"},{"thistle", "#d8bfd8"},{"tomato", "#ff6347"},
 	    {"turquoise", "#40e0d0"},{"VIOLET", "#ee82ee"},{"wheat", "#f5deb3"},{"WHITE", "#ffffff"},
-	    {"whitesmoke", "#f5f5f5"},{"yellow", "#ffff00"},{"yellowgreen", "#9acd32"}
+	    {"whitesmoke", "#f5f5f5"},{"YELLOW", "#ffff00"},{"yellowgreen", "#9acd32"}
 	  };
 	 
 	  public ColorChooser() {
@@ -98,7 +98,7 @@ class ColorChooser extends VBox {
 	      @Override public void changed(ObservableValue<? extends String> observableValue, String oldName, String newName) {
 	        if (newName != null) {
 	          colorInfo.setStyle("-fx-background-color: " + newName + ";");
-	          if (newName.equals("WHITE"))
+	          if (newName.equals("WHITE") || newName.equals("YELLOW"))
 	        	  selectedColorName.setStyle("-fx-text-fill: black; -fx-font-size: 16; -fx-font-family: \"Helvetica\";");
 	          else
 	        	  selectedColorName.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-family: \"Helvetica\";");

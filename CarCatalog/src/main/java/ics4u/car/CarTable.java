@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +45,12 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TabPane.TabClosingPolicy;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -64,7 +70,7 @@ public class CarTable extends Application {
 	
 	//***** CLASS VARIABLES *****
     //API Key (expires in 7 days, I need to reactivate)
-    final static String subscriptionKey = "";
+    final static String subscriptionKey = "a766bc08387c465daf5a479bcbd72bb9";
 
     //URI for API endpoint
     final static String host = "https://api.cognitive.microsoft.com";
@@ -72,12 +78,14 @@ public class CarTable extends Application {
     static String searchTerm = "";
     static String modelName = "";
     static String colour = "";
+    static ArrayList<String> urlList = new ArrayList<>();
     
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
     static Label status;
     static TabPane layout;
-    static Tab tC;
+    static Tab tC, tB;
+    static ComboBox<String> history;
 
     //I got this function from the Bing API documentation
     private static SearchResults SearchImages (String searchQuery) throws Exception 
@@ -116,7 +124,6 @@ public class CarTable extends Application {
 	//I decided to just put the class within my tester class to make it easier to read while coding
     public class Car 
     {
- 
         private SimpleStringProperty year, make, model;
  
         public String getYear() {
@@ -137,13 +144,11 @@ public class CarTable extends Application {
             this.make = new SimpleStringProperty(f2);
             this.model = new SimpleStringProperty(f3);
         }
- 
     }
  
     private static final TableView<Car> tableView = new TableView<>();
  
-    private static final ObservableList<Car> dataList
-            = FXCollections.observableArrayList();
+    private static final ObservableList<Car> dataList = FXCollections.observableArrayList();
     
     private static Car car;
  
@@ -154,6 +159,8 @@ public class CarTable extends Application {
         
 		//There will be a tab for selecting a car, and one for displaying it's properties.
 		layout = new TabPane();
+		layout.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
+		
 		Tab tA = new Tab("Main Menu");
 		
 		createMainMenu(tA);
@@ -208,7 +215,6 @@ public class CarTable extends Application {
         
         FilteredList<Car> filteredData = new FilteredList<>(dataList, p -> true);
         
-        
         //**** SELECT A CAR FROM THE TABLE*****
         Button get = new Button("Get Car");
         get.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
@@ -254,7 +260,7 @@ public class CarTable extends Application {
         SortedList<Car> sortedData = new SortedList<>(filteredData);
         
         //(I took this next part from Stack Overflow)
-        //Bind the SortedList comparator to the TableView comparator. 
+        //Bind the SortedList comparator to the TableView comparator.
         sortedData.comparatorProperty().bind(tableView.comparatorProperty());
         
         //Add sorted (and filtered) data to the table.
@@ -267,8 +273,17 @@ public class CarTable extends Application {
                 {"WHITE", "#ffffff"},
         		{"RED", "#dc143c"},
         		{"GREEN", "#008000"},
-        		{"ORANGE", "#ffa500"}
+        		{"ORANGE", "#ffa500"},
+        		{"PINK", "#ffc0cb"},
+        		{"SILVER", "#c0c0c0"},
+        		{"YELLOW", "#ffff00"}
         };
+        
+        Label suggestion = new Label("Can't find your car?\nSuggest one below:");
+        suggestion.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
+        
+        history = new ComboBox<>();
+        history.setPromptText("Search History");
         
         //I imported a colour chooser object from github to allow the user to specify the car colour
         final ColorChooser colorChooser = new ColorChooser(palette);
@@ -283,13 +298,15 @@ public class CarTable extends Application {
         });
  
         //Vertical container to store the table
-        VBox hbox = new VBox(filterField, get, pb, status, colorChooser);
-        hbox.setSpacing(10);
+        VBox vbox1 = new VBox(filterField, get, pb, status, colorChooser);
+        vbox1.setSpacing(10);
+        VBox vbox2 = new VBox(tableView, suggestion, addACar(), history);
+        vbox2.setSpacing(10);
         
         HBox vBox = new HBox();
         vBox.setPadding(new Insets(28,28,40,48));
-        vBox.setSpacing(10);
-        vBox.getChildren().addAll(tableView, hbox);
+        vBox.setSpacing(48);
+        vBox.getChildren().addAll(vbox2, vbox1);
  
         //Add to the group node
         root.getChildren().add(vBox);
@@ -299,7 +316,7 @@ public class CarTable extends Application {
 		
 		layout.getTabs().addAll(tA, tB, tC);
  
-        primaryStage.setScene(new Scene(layout, 700, 500));
+        primaryStage.setScene(new Scene(layout, 700, 600));
         primaryStage.show();
  
         readCSV();
@@ -323,7 +340,7 @@ public class CarTable extends Application {
             {
                 String[] fields = line.split(FieldDelimiter, -1);
  
-                Car record = new Car(fields[0], fields[1], fields[2]); //For later: try and replace the extra crap in the fourth field
+                Car record = new Car(fields[0], fields[1], fields[2]);
                 
                 //Add to the data list
                 dataList.add(record);
@@ -348,7 +365,7 @@ public class CarTable extends Application {
     	
     	if (tableView.getSelectionModel().getSelectedItem() == null)
     	{
-    		status.setText("No cars selected");
+    		status.setText("No cars selected\n\n");
     	}
     	else
     	{
@@ -361,48 +378,123 @@ public class CarTable extends Application {
         	//Tell user that the search function is being called
         	status.setText(modelName + " selected\nSearching web for image...");
         	
+        	history.getItems().add(modelName);
+        	
         	searchTerm = modelName;
         	
         	String url = search(status);
         	
         	displayCar = new ImageView(new Image(url));
-        	Label stats = new Label(modelName + "\n");
+            displayCar.setFitWidth(600);
+            displayCar.setFitHeight(400);
+            displayCar.setPreserveRatio(true);
+            displayCar.setSmooth(true);
+            displayCar.setCache(true); 
         	
-        	VBox img = new VBox(displayCar, stats);
+        	VBox img = new VBox(displayCar);
+        	img.setStyle("-fx-border-color: black; -fx-border-width: 10;");
+        	
+        	VBox tab = formatOut(img);
             
-            tC.setContent(img);
+            tC.setContent(tab);
             
         	System.out.println("You selected a " + modelName);
-    	}
-    	
-    	status.setText("Success! Switching to next tab....");
-    	
-        Task<Void> sleeper = new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-                try {
-                	
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
+        	
+        	status.setText("Success! Switching to next tab....\n\n");
+        	
+        	// Put current thread to sleep to delay the switch to the image tab
+        	// This will make the switch less sudden and allow for a warning message
+            Task<Void> sleeper = new Task<Void>() {
+                @Override
+                protected Void call() throws Exception {
+                    try {
+                    	//Put current thread to sleep for one second
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                    return null;
                 }
-                return null;
-            }
-        };
-        sleeper.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
-            @Override
-            public void handle(WorkerStateEvent event) 
-            {
-            	layout.getSelectionModel().select(tC);
-            }
+            };
+            sleeper.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+                @Override
+                public void handle(WorkerStateEvent event) 
+                {
+                	layout.getSelectionModel().select(tC);
+                }
+            });
+            new Thread(sleeper).start();
+    	}
+    }
+    
+    private static VBox formatOut(VBox image)
+    {
+    	VBox output = new VBox();
+    	output.setPadding(new Insets(20,20,20,20));
+    	output.setSpacing(10);
+    	
+    	Label title = new Label(searchTerm);
+    	title.setStyle("    -fx-font-size: 29pt;\n" + "    -fx-font-family: \"Helvetica\";");
+    	
+    	Button startAgain = new Button("Search for a new Car");
+    	startAgain.setOnAction((ActionEvent ae) -> {
+    		layout.getSelectionModel().select(tB);
+    	});
+    	
+    	output.getChildren().addAll(title, image, startAgain);
+    	
+    	return output;
+    }
+    
+    private static HBox addACar()
+    {
+        final HBox hBox = new HBox();
+        hBox.setSpacing(5);
+
+        final TextField yearTextField = new TextField("year");
+        yearTextField.setPrefWidth(50);
+        final TextField makeTextField = new TextField("make");
+        makeTextField.setPrefWidth(50);
+        final TextField modelTextField = new TextField("model");
+        modelTextField.setPrefWidth(50);
+        
+        Button saveButton = new Button("ADD");
+
+        saveButton.setOnAction((ActionEvent ae) -> {
+        	
+        	//User check
+        	if (yearTextField.getText().equals(null) || makeTextField.getText().equals(null) || modelTextField.getText().equals(null))
+        	{
+        		status.setText("Error: One of the fields are null");
+        	}
+        	else
+        	{
+            	//Concatenate a comma separated string to add to the suggestions file
+            	String car = yearTextField.getText() + "," + makeTextField.getText() + "," + modelTextField.getText() + ",";
+            	
+            	//Include a user check before writing to file
+            	try {
+    				save(car);
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+        	}
         });
-        new Thread(sleeper).start();
+
+        hBox.getChildren().addAll(saveButton, yearTextField, makeTextField, modelTextField);
+        
+        return hBox;
+    }
+    
+    //Add the suggested car to the suggestions text file
+    private static void save(String car) throws IOException {	 
+    	Files.write(Paths.get("/Users/vivekkandathil/Documents/suggestions.txt"), car.getBytes(), StandardOpenOption.APPEND);
     }
     
     public static void createMainMenu(Tab t)
     {
     	//Label for instructions
     	Label instructions = new Label();
-    	instructions.setText("Welcome to Vivek's car searcher!\nThis program will allow you to search through an expansive "
+    	instructions.setText("Welcome to the car searcher!\nThis program will allow you to search through an expansive "
     			+ "list of cars and find a car make/model\nof your choice. Go to the next tab to proceed. You will find a "
     			+ "table that lists all of the cars in the\ndatabase. Use the search filter below the table to find a car. "
     			+ "Select the cell and click on the\nGet Car Button to get your car!\n\n(Note: I am basing the car data off of a "
@@ -416,8 +508,15 @@ public class CarTable extends Application {
         		"    -fx-font-family: \"Helvetica\";");
     	exit.setOnAction(actionevent -> Platform.exit());
     	
+    	Button proceed = new Button("Start!");
+        proceed.setStyle("    -fx-font-size: 11pt;\n" + 
+        		"    -fx-font-family: \"Helvetica\";");
+    	proceed.setOnAction((ActionEvent a) -> {
+    		layout.getSelectionModel().select(tB);
+    	});
+    	
     	//Container
-    	VBox p = new VBox(instructions, exit);
+    	VBox p = new VBox(instructions, proceed, exit);
     	p.setPadding(new Insets(40,40,40,40));
     	
     	t.setContent(p);
