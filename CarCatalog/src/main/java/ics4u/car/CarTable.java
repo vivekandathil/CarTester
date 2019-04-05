@@ -1,7 +1,9 @@
 package ics4u.car;
 
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -19,6 +21,7 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.google.gson.JsonArray;
@@ -39,12 +42,17 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -58,13 +66,31 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
+import java.io.IOException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+
+
+//TODO:
+//Amazon API
 
 public class CarTable extends Application {
 	
@@ -76,6 +102,7 @@ public class CarTable extends Application {
     final static String host = "https://api.cognitive.microsoft.com";
     final static String path = "/bing/v5.0/images/search";
     static String searchTerm = "";
+    static String videoSearch = "";
     static String modelName = "";
     static String colour = "";
     static ArrayList<String> urlList = new ArrayList<>();
@@ -84,8 +111,9 @@ public class CarTable extends Application {
     static ImageView displayCar = new ImageView();
     static Label status;
     static TabPane layout;
-    static Tab tC, tB;
+    static Tab tD, tC, tB;
     static ComboBox<String> history;
+    static Stage stage;
 
     //I got this function from the Bing API documentation
     private static SearchResults SearchImages (String searchQuery) throws Exception 
@@ -146,27 +174,29 @@ public class CarTable extends Application {
         }
     }
  
+    //Other class variables that use the Car object
     private static final TableView<Car> tableView = new TableView<>();
- 
     private static final ObservableList<Car> dataList = FXCollections.observableArrayList();
-    
     private static Car car;
  
 	@Override
     public void start(Stage primaryStage) 
 	{
+		this.stage = primaryStage;
+		
         primaryStage.setTitle("The Car Catalog!");
         
 		//There will be a tab for selecting a car, and one for displaying it's properties.
 		layout = new TabPane();
+		
+		//**** FORMAT TABS ****
 		layout.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
 		
 		Tab tA = new Tab("Main Menu");
-		
-		createMainMenu(tA);
-		
 		Tab tB = new Tab("Select a car");
 		tC = new Tab("Purchase");
+		tD = new Tab("Car Reviews");
+		createMainMenu(tA);
 		
 		//This resets all components when the tab is entered
 	    tB.setOnSelectionChanged(event -> {
@@ -201,7 +231,11 @@ public class CarTable extends Application {
             TableRow<Car> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
-                	buttonAction();
+                	try {
+						buttonAction();
+					} catch (IOException | JSONException e) {
+						e.printStackTrace();
+					}
                 }
             });
             return row ;
@@ -223,7 +257,11 @@ public class CarTable extends Application {
         //For testing purposes I will be printing all the selected data in the console
         get.setOnAction((ActionEvent ae) -> 
         {
-        	buttonAction();
+        	try {
+				buttonAction();
+			} catch (IOException | JSONException e) {
+				e.printStackTrace();
+			}
         });
         
         //****** FILTERING TEXT IN THE TABLE VIEW ******
@@ -304,8 +342,8 @@ public class CarTable extends Application {
         vbox2.setSpacing(10);
         
         HBox vBox = new HBox();
-        vBox.setPadding(new Insets(28,28,40,48));
-        vBox.setSpacing(48);
+        vBox.setPadding(new Insets(28,28,28,28));
+        vBox.setSpacing(29);
         vBox.getChildren().addAll(vbox2, vbox1);
  
         //Add to the group node
@@ -314,7 +352,7 @@ public class CarTable extends Application {
         //Put all content into second tab
 		tB.setContent(root);
 		
-		layout.getTabs().addAll(tA, tB, tC);
+		layout.getTabs().addAll(tA, tB, tC, tD);
  
         primaryStage.setScene(new Scene(layout, 700, 600));
         primaryStage.show();
@@ -359,7 +397,7 @@ public class CarTable extends Application {
         }
     }
     
-    private static void buttonAction()
+    private static void buttonAction() throws IOException, JSONException
     {
     	pb.setProgress(0);
     	
@@ -373,32 +411,45 @@ public class CarTable extends Application {
         	car = tableView.getSelectionModel().getSelectedItem();
         	
         	//Use get property methods to print out car data
-        	modelName = colour + " " + car.getYear() + " " + car.getMake() + " " + car.getModel();
+        	modelName = car.getYear() + " " + car.getMake() + " " + car.getModel();
         	
         	//Tell user that the search function is being called
         	status.setText(modelName + " selected\nSearching web for image...");
         	
         	history.getItems().add(modelName);
         	
-        	searchTerm = modelName;
+        	//Include the colour strings in the search
+        	searchTerm = colour + " " + modelName;
+        	
+        	// Exclude the colour name for the video search
+        	videoSearch = modelName;
         	
         	String url = search(status);
         	
-        	displayCar = new ImageView(new Image(url));
+        	Image output = new Image(url);
+        	
+        	Button save = new Button("Save Image");
+        	save.setOnAction(e -> saveImages(output));
+        	
+        	//**** FORMATTING IMAGE OUTPUT ****
+        	displayCar = new ImageView(output);
             displayCar.setFitWidth(600);
             displayCar.setFitHeight(400);
             displayCar.setPreserveRatio(true);
             displayCar.setSmooth(true);
-            displayCar.setCache(true); 
+            displayCar.setCache(true);
         	
         	VBox img = new VBox(displayCar);
         	img.setStyle("-fx-border-color: black; -fx-border-width: 10;");
         	
-        	VBox tab = formatOut(img);
+        	//Call separate format output function and use returned vbox
+        	VBox tab = formatOut(img, save);
             
             tC.setContent(tab);
             
-        	System.out.println("You selected a " + modelName);
+            getVideo();
+            
+        	System.out.println("You selected a " + modelName + "\n--------------\n");
         	
         	status.setText("Success! Switching to next tab....\n\n");
         	
@@ -426,7 +477,40 @@ public class CarTable extends Application {
     	}
     }
     
-    private static VBox formatOut(VBox image)
+    private static void getVideo() throws IOException, JSONException
+    {
+    	//Search for a car review using car name and year
+		String keyword = videoSearch + " review";
+		
+		System.out.println("Searching youtube for " + keyword);
+		
+		//Ensure search string is valid without spaces
+		keyword = keyword.replace(" ", "+");
+		 
+		// The url for the API call
+		String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=rating&q=" + keyword + "&key=AIzaSyAL0xSUWCnUTe6HWjx72AfoAwsTB5AF6i4";
+		 
+		//Get JSON object
+		Document doc = Jsoup.connect(url).timeout(10 * 1000).ignoreContentType(true).get();
+		String getJson = doc.text();
+		JSONObject jsonObject = (JSONObject) new JSONTokener(getJson ).nextValue();
+		 
+		//Parse JSON and retrieve the video ID (this is appended to the youtube url)
+		String videoID = (String) ((JSONObject) ((JSONObject) jsonObject.getJSONArray("items").get(0)).get("id")).get("videoId");
+		String videoName = (String) ((JSONObject) ((JSONObject) jsonObject.getJSONArray("items").get(0)).get("snippet")).get("title");
+		String videoURL = "https://www.youtube.com/watch?v=" + videoID;
+		System.out.println("Video found at " + videoURL);
+		System.out.println(videoName + "\n-----------");
+		
+	    WebView webview = new WebView();
+	    webview.getEngine().load(
+	      videoURL
+	    );
+	    
+	    tD.setContent(webview);
+    }
+    
+    private static VBox formatOut(VBox image, Button save)
     {
     	VBox output = new VBox();
     	output.setPadding(new Insets(20,20,20,20));
@@ -440,22 +524,27 @@ public class CarTable extends Application {
     		layout.getSelectionModel().select(tB);
     	});
     	
-    	output.getChildren().addAll(title, image, startAgain);
+    	HBox components = new HBox(startAgain, save);
+    	components.setPadding(new Insets(20,20,20,20));
+    	components.setSpacing(10);
+    	
+    	output.getChildren().addAll(title, image, components);
     	
     	return output;
     }
     
+    //Car suggestion
     private static HBox addACar()
     {
         final HBox hBox = new HBox();
         hBox.setSpacing(5);
 
         final TextField yearTextField = new TextField("year");
-        yearTextField.setPrefWidth(50);
+        yearTextField.setPrefWidth(80);
         final TextField makeTextField = new TextField("make");
-        makeTextField.setPrefWidth(50);
+        makeTextField.setPrefWidth(80);
         final TextField modelTextField = new TextField("model");
-        modelTextField.setPrefWidth(50);
+        modelTextField.setPrefWidth(80);
         
         Button saveButton = new Button("ADD");
 
@@ -490,6 +579,30 @@ public class CarTable extends Application {
     	Files.write(Paths.get("/Users/vivekkandathil/Documents/suggestions.txt"), car.getBytes(), StandardOpenOption.APPEND);
     }
     
+    //This is used to save the output image
+    private static void saveImages(Image image) {
+    	
+    	//replace the spaces with underscores to create a proper name
+    	String filename = searchTerm.replaceAll(" ", "_");
+        
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        
+        File selectedDirectory = directoryChooser.showDialog(stage);
+
+        if(selectedDirectory == null)
+        {
+             //No Directory selected
+        }else
+        {
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(image, null), "jpg", new File(selectedDirectory.getAbsolutePath() + "/" + filename + ".jpg"));
+                System.out.println("Saved successfully!");
+            } catch (IOException e) {
+            }
+        }
+    }
+    
+    // Creates and adds content for main menu
     public static void createMainMenu(Tab t)
     {
     	//Label for instructions
@@ -506,7 +619,14 @@ public class CarTable extends Application {
     	Button exit = new Button("Exit");
         exit.setStyle("    -fx-font-size: 11pt;\n" + 
         		"    -fx-font-family: \"Helvetica\";");
-    	exit.setOnAction(actionevent -> Platform.exit());
+    	exit.setOnAction(actionevent -> {
+    		Alert alert = new Alert(AlertType.CONFIRMATION, "Exit?", ButtonType.YES, ButtonType.CANCEL);
+    		alert.showAndWait();
+
+    		if (alert.getResult() == ButtonType.YES) {
+    		    Platform.exit();
+    		}
+    	});
     	
     	Button proceed = new Button("Start!");
         proceed.setStyle("    -fx-font-size: 11pt;\n" + 
@@ -539,9 +659,9 @@ public class CarTable extends Application {
 
         try 
         {	
-            status.setText("Searching the Web for: " + searchTerm + "...");
+            System.out.println("Searching the Web for: " + searchTerm + "...");
             SearchResults result = SearchImages(searchTerm);
-            status.setText("Recieved successful response. Retrieving image...");
+            System.out.println("Recieved successful response. Retrieving image...");
             
             //According to the documentation Bing API will return the image data in the form of a JSON data structure
             //A JSON parser will be used to parse the data and retrieve the url of the first image returned
@@ -563,7 +683,7 @@ public class CarTable extends Application {
 
             timeline.play();
             
-            status.setText("Total of " + total + " images were found. Retrieving first result\n");
+            System.out.println("Total of " + total + " images were found. Retrieving first result\n");
             status.setText("Success!\nGo to the next tab");
             
         }
