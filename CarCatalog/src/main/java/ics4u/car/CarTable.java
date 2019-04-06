@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
 
+import com.github.axet.vget.VGet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -33,6 +34,8 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -53,6 +56,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -69,6 +73,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -90,17 +97,17 @@ import javafx.stage.Stage;
 
 
 //TODO:
-//Amazon API
+//Amazon/ebay/kellybluebook API
 
 public class CarTable extends Application {
 	
 	//***** CLASS VARIABLES *****
     //API Key (expires in 7 days, I need to reactivate)
-    final static String subscriptionKey = "a766bc08387c465daf5a479bcbd72bb9";
+    final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46";
 
     //URI for API endpoint
     final static String host = "https://api.cognitive.microsoft.com";
-    final static String path = "/bing/v5.0/images/search";
+    final static String path = "/bing/v7.0/images/search";
     static String searchTerm = "";
     static String videoSearch = "";
     static String modelName = "";
@@ -114,6 +121,7 @@ public class CarTable extends Application {
     static Tab tD, tC, tB;
     static ComboBox<String> history;
     static Stage stage;
+    static CheckBox download = new CheckBox("Download Video Review");
 
     //I got this function from the Bing API documentation
     private static SearchResults SearchImages (String searchQuery) throws Exception 
@@ -149,30 +157,7 @@ public class CarTable extends Application {
         return results;
     }
  
-	//I decided to just put the class within my tester class to make it easier to read while coding
-    public class Car 
-    {
-        private SimpleStringProperty year, make, model;
- 
-        public String getYear() {
-            return year.get();
-        }
- 
-        public String getMake() {
-            return make.get();
-        }
- 
-        public String getModel() {
-            return model.get();
-        }
- 
-        Car(String f1, String f2, String f3) 
-        {
-            this.year = new SimpleStringProperty(f1);
-            this.make = new SimpleStringProperty(f2);
-            this.model = new SimpleStringProperty(f3);
-        }
-    }
+
  
     //Other class variables that use the Car object
     private static final TableView<Car> tableView = new TableView<>();
@@ -194,7 +179,7 @@ public class CarTable extends Application {
 		
 		Tab tA = new Tab("Main Menu");
 		Tab tB = new Tab("Select a car");
-		tC = new Tab("Purchase");
+		tC = new Tab("Image");
 		tD = new Tab("Car Reviews");
 		createMainMenu(tA);
 		
@@ -252,6 +237,8 @@ public class CarTable extends Application {
         //**** SELECT A CAR FROM THE TABLE*****
         Button get = new Button("Get Car");
         get.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
+        HBox startIt = new HBox(get, download);
+        startIt.setSpacing(24);
         
         //Event listener that gets a car object from the table cell that the User selects
         //For testing purposes I will be printing all the selected data in the console
@@ -336,7 +323,7 @@ public class CarTable extends Application {
         });
  
         //Vertical container to store the table
-        VBox vbox1 = new VBox(filterField, get, pb, status, colorChooser);
+        VBox vbox1 = new VBox(filterField, startIt, pb, status, colorChooser);
         vbox1.setSpacing(10);
         VBox vbox2 = new VBox(tableView, suggestion, addACar(), history);
         vbox2.setSpacing(10);
@@ -475,6 +462,9 @@ public class CarTable extends Application {
             });
             new Thread(sleeper).start();
     	}
+    	
+    	EbaySearcher ebaySearcher = new EbaySearcher();
+    	ebaySearcher.get_response(videoSearch);
     }
     
     private static void getVideo() throws IOException, JSONException
@@ -502,12 +492,25 @@ public class CarTable extends Application {
 		System.out.println("Video found at " + videoURL);
 		System.out.println(videoName + "\n-----------");
 		
-	    WebView webview = new WebView();
-	    webview.getEngine().load(
-	      videoURL
-	    );
-	    
-	    tD.setContent(webview);
+		if (download.isSelected())
+		{
+	        try {
+	            String path = "/Users/vivekkandathil/Documents/";
+	            VGet v = new VGet(new URL(videoURL), new File(path));
+	            v.download();   
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        }
+		}
+		else
+		{
+		    WebView webview = new WebView();
+		    webview.getEngine().load(
+		      videoURL
+		    );
+		    
+		    tD.setContent(webview);
+		}
     }
     
     private static VBox formatOut(VBox image, Button save)
@@ -641,10 +644,6 @@ public class CarTable extends Application {
     	
     	t.setContent(p);
     }
- 
-    public static void main(String[] args) {
-        launch(args);
-    }
     
     public static String search(Label status)
     {
@@ -695,6 +694,10 @@ public class CarTable extends Application {
         
         return resultURL;  
     }  
+    
+    public static void main(String[] args) {
+        launch(args);
+    }
 }
 
 //Container class for search results encapsulates relevant headers and JSON data
