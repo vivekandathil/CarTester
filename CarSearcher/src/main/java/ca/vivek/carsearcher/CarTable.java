@@ -158,8 +158,6 @@ public class CarTable extends Application {
         return results;
     }
  
-
- 
     //Other class variables that use the Car object
     private static final TableView<Car> tableView = new TableView<>();
     private static final ObservableList<Car> dataList = FXCollections.observableArrayList();
@@ -659,16 +657,24 @@ public class CarTable extends Application {
     	//Image img = new Image(id);
     	//ImageView displayEbay = new ImageView(img);
     	
-    	Label l1 = new Label("Your car was found on eBay!\n");
+    	Label l1 = new Label((results.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
     	l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
     	
-    	Label l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id"));
+    	Label l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id") + "\nLocated in " + results.get("location"));
     	l2.setStyle("    -fx-font-size: 16pt;\n-fx-font-family: \"Helvetica\";");
     	
-    	////HBox nameLocation = new HBox(displayEbay, l1);
+	    WebView webview = new WebView();
+	    webview.getEngine().load(
+	      results.get("imageURL")
+	    );
     	
-    	VBox vbox = new VBox(l1, l2);
+    	HBox nameLocation = new HBox(webview);
+    	nameLocation.setPrefWidth(200);
+    	nameLocation.setPrefHeight(200);
+    	
+    	VBox vbox = new VBox(l1, nameLocation, l2);
     	vbox.setPadding(new Insets(10,10,20,20));
+    	vbox.setSpacing(10);
     	
     	tE.setContent(vbox);
     	

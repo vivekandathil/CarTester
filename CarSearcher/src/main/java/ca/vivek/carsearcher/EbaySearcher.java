@@ -84,19 +84,19 @@ public class EbaySearcher
 			file.flush();
 			file.close();
 
-			// Try and see if I can do this in a more efficient way later on
-			// Also learn more about JSON!
-			JSONObject req = new JSONObject(response.toString());
-			JSONArray locs = req.getJSONArray("findItemsAdvancedResponse");
-			JSONObject rec = locs.getJSONObject(0);
-			JSONArray a = rec.getJSONArray("searchResult");
-			JSONObject rec2 = a.getJSONObject(0);
-			JSONArray b = rec2.getJSONArray("item");
-			JSONObject rec3 = b.getJSONObject(0);
-			
 			// some properties aren't always there, catch missing tags and don't add
 			try
 			{
+				// Try and see if I can do this in a more efficient way later on
+				// Also learn more about JSON!
+				JSONObject req = new JSONObject(response.toString());
+				JSONArray locs = req.getJSONArray("findItemsAdvancedResponse");
+				JSONObject rec = locs.getJSONObject(0);
+				JSONArray a = rec.getJSONArray("searchResult");
+				JSONObject rec2 = a.getJSONObject(0);
+				JSONArray b = rec2.getJSONArray("item");
+				JSONObject rec3 = b.getJSONObject(0);
+				
 				String title = rec3.getString("title");
 				properties.put("car",title.substring(2, title.length() - 2));
 				String itemID = rec3.getString("itemId");
@@ -108,11 +108,10 @@ public class EbaySearcher
 				String location = rec3.getString("location");
 				properties.put("location",location.substring(2, location.length() - 2));
 			}
-			catch (org.json.JSONException e)
+			catch (JSONException e)
 			{
-				System.out.println("property doesn't exist");
+				System.out.println("Tag missing or no search results found");
 			}
-
 			
 			System.out.println(properties);
 			
