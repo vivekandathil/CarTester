@@ -107,6 +107,18 @@ public class EbaySearcher
 				properties.put("imageURL",imageURL.substring(2, imageURL.length() - 2));
 				String location = rec3.getString("location");
 				properties.put("location",location.substring(2, location.length() - 2));
+				String paymentMethod = rec3.getString("paymentMethod");
+				properties.put("paymentMethod",paymentMethod.substring(2, paymentMethod.length() - 2));
+				
+				JSONArray c = rec3.getJSONArray("sellingStatus");
+				JSONObject rec4 = c.getJSONObject(0);
+				JSONArray d = rec4.getJSONArray("currentPrice");
+				JSONObject rec5 = d.getJSONObject(0);
+				
+				String price = rec5.getString("__value__");
+				properties.put("price",price);
+				
+				
 			}
 			catch (JSONException e)
 			{

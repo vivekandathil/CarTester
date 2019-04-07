@@ -13,9 +13,12 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -349,7 +352,7 @@ public class CarTable extends Application {
  
     private void readCSV() 
     {
-        String CsvFile = "/Users/vivekkandathil/Documents/car.csv";
+        String CsvFile = "src/main/java/car.csv";
         String FieldDelimiter = ",";
         BufferedReader br;
  
@@ -578,7 +581,7 @@ public class CarTable extends Application {
     
     //Add the suggested car to the suggestions text file
     private static void save(String car) throws IOException {	 
-    	Files.write(Paths.get("/Users/vivekkandathil/Documents/suggestions.txt"), car.getBytes(), StandardOpenOption.APPEND);
+    	Files.write(Paths.get("src/main/java/suggestions.txt"), car.getBytes(), StandardOpenOption.APPEND);
     }
     
     //This is used to save the output image
@@ -663,22 +666,28 @@ public class CarTable extends Application {
     	Label l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id") + "\nLocated in " + results.get("location"));
     	l2.setStyle("    -fx-font-size: 16pt;\n-fx-font-family: \"Helvetica\";");
     	
+    	Label l3 = new Label("Current Price: " + NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(Double.parseDouble(results.get("price"))));
+    	l3.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
+    	
 	    WebView webview = new WebView();
 	    webview.getEngine().load(
 	      results.get("imageURL")
 	    );
+	    
+	    ObservableList<String> p = FXCollections.observableArrayList(results.get("paymentMethod").replaceAll("\"", "").split(","));
+	    
+	    ComboBox<String> paymentMethods = new ComboBox<>(p);
+	    paymentMethods.setPromptText("Payment Methods");
     	
     	HBox nameLocation = new HBox(webview);
     	nameLocation.setPrefWidth(200);
     	nameLocation.setPrefHeight(200);
     	
-    	VBox vbox = new VBox(l1, nameLocation, l2);
+    	VBox vbox = new VBox(l1, nameLocation, l2, l3, paymentMethods);
     	vbox.setPadding(new Insets(10,10,20,20));
     	vbox.setSpacing(10);
     	
     	tE.setContent(vbox);
-    	
-    	
     }
     
     public static String search(Label status)
