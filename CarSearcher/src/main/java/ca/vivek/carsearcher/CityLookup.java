@@ -35,6 +35,7 @@ class CityLookup {
         while ((line = reader.readLine()) != null)
         {
             response += line;
+            System.out.println(line);
         }
         reader.close();
         

@@ -107,31 +107,26 @@ import javafx.stage.Stage;
 
 
 //TODO:
-//Amazon/ebay/kellybluebook API
-// Add locatedin parameter
+// image slide show
+// fix textfile issue when packaging jar
+// clean css
 
 public class CarTable extends Application {
 	
 	//***** CLASS VARIABLES *****
-    //API Key (expires in 7 days, I need to reactivate)
-    final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46";
-
-    //URI for API endpoint
-    final static String host = "https://api.cognitive.microsoft.com";
+    final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46"; // Key for Bing API  
+    final static String host = "https://api.cognitive.microsoft.com"; //URI for API endpoint
     final static String path = "/bing/v7.0/images/search";
-    static String searchTerm = "";
-    static String videoSearch = "";
-    static String modelName = "";
-    static String colour = "";
-    static String city = "", region = "", country = "", currency = "";
-    static ArrayList<String> urlList = new ArrayList<>();
+    static String searchTerm = "", videoSearch = "", modelName = "", colour = ""; // Used for car properties
+    static String city = "", region = "", country = "", currency = ""; // Used for user's location properties
+    static ArrayList<String> urlList = new ArrayList<>(); // CURRENTLY UNUSED, for multiple search results
     static double maxPricing = 500000.00;
     
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
     static Label status;
     static TabPane layout;
-    static Tab tE, tD, tC, tB;
+    static Tab tE, tD, tC, tB, tA;
     static ComboBox<String> history;
     static Stage stage;
     static CheckBox download = new CheckBox("Download Video Review");
@@ -189,8 +184,8 @@ public class CarTable extends Application {
 		//**** FORMAT TABS ****
 		layout.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
 		
-		Tab tA = new Tab("Main Menu");
-		Tab tB = new Tab("Select a car");
+		tA = new Tab("Main Menu");
+		tB = new Tab("Select a car");
 		tC = new Tab("Image");
 		tD = new Tab("Car Reviews");
 		tE = new Tab("Purchase");
@@ -344,10 +339,12 @@ public class CarTable extends Application {
         history = new ComboBox<>();
         history.setPromptText("Search History");
 	    history.setStyle("    -fx-text-fill        : #006464;\n" + 
-	    		"    -fx-background-color : SpringGreen;\n" + 
+	    		"    -fx-background-color : white;\n" + 
 	    		"    -fx-border-radius    : 20;\n" + 
+	    		"    -fx-border-color    : SpringGreen;\n" + 
 	    		"    -fx-background-radius: 20;\n" + 
 	    		"    -fx-font-family: \"Helvetica\";\n" + 
+	    	    "    -fx-font-size: 10pt;\n" +
 	    		"-fx-padding : 5;");
         
         //I imported a colour chooser object from github to allow the user to specify the car colour
@@ -368,9 +365,9 @@ public class CarTable extends Application {
         group = new CheckBox("Nearby Sellers Only");
         currencyConvert = new CheckBox("Convert Currency to " + currency + "?");
         group.setUserData(Color.LIGHTGREEN);
-        group.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;");
+        group.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;" + "    -fx-font-family: \"Helvetica\";\n");
         currencyConvert.setUserData(Color.LIGHTGREEN);
-        currencyConvert.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;");
+        currencyConvert.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;" + "    -fx-font-family: \"Helvetica\";\n");
         VBox locationVbox = new VBox(locationInformation, group, currencyConvert);
         locationVbox.setSpacing(14);
  
@@ -393,7 +390,7 @@ public class CarTable extends Application {
 		
 		layout.getTabs().addAll(tA, tB, tC, tD, tE);
  
-        primaryStage.setScene(new Scene(layout, 700, 600));
+        primaryStage.setScene(new Scene(layout, 800, 600));
         primaryStage.show();
  
         readCSV();
@@ -406,7 +403,7 @@ public class CarTable extends Application {
         
         try
         { 
-            URL url_name = new URL("http://bot.whatismyipaddress.com"); 
+            URL url_name = new URL("http://bot.whatismyipaddress.com");
   
             BufferedReader sc = new BufferedReader(new InputStreamReader(url_name.openStream())); 
   
