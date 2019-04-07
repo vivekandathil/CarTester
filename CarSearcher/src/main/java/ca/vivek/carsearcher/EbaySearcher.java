@@ -109,6 +109,8 @@ public class EbaySearcher
 				properties.put("location",location.substring(2, location.length() - 2));
 				String paymentMethod = rec3.getString("paymentMethod");
 				properties.put("paymentMethod",paymentMethod.substring(2, paymentMethod.length() - 2));
+				String itemURL = rec3.getString("viewItemURL");
+				properties.put("itemURL",itemURL.substring(2, itemURL.length() - 2));
 				
 				JSONArray c = rec3.getJSONArray("sellingStatus");
 				JSONObject rec4 = c.getJSONObject(0);

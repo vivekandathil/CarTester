@@ -1,6 +1,7 @@
 package ca.vivek.carsearcher;
 
 
+import java.awt.Desktop;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -437,7 +439,15 @@ public class CarTable extends Application {
             
             tC.setContent(tab);
             
-            getVideo();
+            try
+            {
+            	getVideo();
+            }
+            catch (org.jsoup.HttpStatusException e)
+            {
+            	System.out.println("403 error for youtube api, skipping");
+            }
+            
             
         	System.out.println("You selected a " + modelName + "\n--------------\n");
         	
@@ -653,13 +663,6 @@ public class CarTable extends Application {
     	EbaySearcher ebaySearcher = new EbaySearcher();
     	Map<String, String> results = ebaySearcher.get_response(videoSearch);
     	
-    	//String id = results.get("imageURL");
-    	
-    	//System.out.println(id);
-    	
-    	//Image img = new Image(id);
-    	//ImageView displayEbay = new ImageView(img);
-    	
     	Label l1 = new Label((results.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
     	l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
     	
@@ -678,12 +681,40 @@ public class CarTable extends Application {
 	    
 	    ComboBox<String> paymentMethods = new ComboBox<>(p);
 	    paymentMethods.setPromptText("Payment Methods");
+	    paymentMethods.setStyle("    -fx-text-fill        : #006464;\n" + 
+	    		"    -fx-background-color : SpringGreen;\n" + 
+	    		"    -fx-border-radius    : 20;\n" + 
+	    		"    -fx-background-radius: 20;\n" + 
+	    		"    -fx-font-family: \"Helvetica\";\n" + 
+	    		"-fx-padding : 5;");
+	    
+	    Button searchEbay = new Button("View on Ebay.com");
+	    searchEbay.setStyle("    -fx-text-fill    : black;\n" + 
+	    		"    -fx-background-color : white;\n" + 
+	    		"    -fx-border-color : green;\n" + 
+	    		"    -fx-border-radius: 5;\n" + 
+	    		"    -fx-font-family: \"Helvetica\";\n" +
+	    		"-fx-padding : 3 6 6 6;");
+	    
+	    searchEbay.setOnAction((ActionEvent ae) -> {
+	        try {
+	            Desktop.getDesktop().browse(new URL(results.get("itemURL")).toURI());
+	        } 
+	        // Catch io exception
+	        catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	        //User check for url format
+	        catch (URISyntaxException e) {
+	            e.printStackTrace();
+	        }
+	    });
     	
     	HBox nameLocation = new HBox(webview);
     	nameLocation.setPrefWidth(200);
     	nameLocation.setPrefHeight(200);
     	
-    	VBox vbox = new VBox(l1, nameLocation, l2, l3, paymentMethods);
+    	VBox vbox = new VBox(l1, nameLocation, l2, l3, paymentMethods, searchEbay);
     	vbox.setPadding(new Insets(10,10,20,20));
     	vbox.setSpacing(10);
     	
