@@ -120,7 +120,18 @@ public class CarTable extends Application {
     static String searchTerm = "", videoSearch = "", modelName = "", colour = ""; // Used for car properties
     static String city = "", region = "", country = "", currency = ""; // Used for user's location properties
     static ArrayList<String> urlList = new ArrayList<>(); // CURRENTLY UNUSED, for multiple search results
+    static Map<String, String> resultsEbay;
     static double maxPricing = 500000.00;
+    
+    // CSS Styles
+    static String buttonStyle = "    -fx-text-fill        : black;\n" + 
+    		"    -fx-background-color : white;\n" + 
+    		"    -fx-border-radius    : 2;\n" + 
+    		"    -fx-border-color    : SpringGreen;\n" + 
+    		"    -fx-background-radius: 2;\n" + 
+    		"    -fx-font-family: \"Helvetica\";\n" + 
+    	    "    -fx-font-size: 10pt;\n" +
+    		"-fx-padding : 5;";
     
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
@@ -166,14 +177,15 @@ public class CarTable extends Application {
         return results;
     }
  
-    //Other class variables that use the Car object
+    // Other class variables that use the Car object
     private static final TableView<Car> tableView = new TableView<>();
     private static final ObservableList<Car> dataList = FXCollections.observableArrayList();
-    private static Car car;
+    private static Car car; // Car object for table selection
  
 	@Override
     public void start(Stage primaryStage) throws IOException, JSONException 
 	{
+		// Stage needs to be accessible in multiple methods
 		this.stage = primaryStage;
 		
         primaryStage.setTitle("The Car Catalog!");
@@ -182,47 +194,51 @@ public class CarTable extends Application {
 		layout = new TabPane();
 		
 		//**** FORMAT TABS ****
-		layout.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
+		layout.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE); // Prevent user from closing tabs
 		
+		// Set titles for tabs
 		tA = new Tab("Main Menu");
-		tB = new Tab("Select a car");
-		tC = new Tab("Image");
-		tD = new Tab("Car Reviews");
-		tE = new Tab("Purchase");
-		createMainMenu(tA);
+		tB = new Tab("Select a car"); // Selection and settings
+		tC = new Tab("Image"); // Display image
+		tD = new Tab("Car Reviews"); // YouTube review
+		tE = new Tab("Purchase"); // ebay search
 		
-		//This resets all components when the tab is entered
-	    tB.setOnSelectionChanged(event -> {
-	        if (tB.isSelected()) {
+		createMainMenu(tA); // Call method to add menu components
+		
+		//This resets all settings when the tab is entered
+	    tB.setOnSelectionChanged(event -> 
+	    {
+	        if (tB.isSelected()) 
+	        {
 	        	pb.setProgress(0);
 	        	status.setText("Awaiting selection\nPress button or double click cell once finished.\n\n"
 	        			+ "COLOUR SELECTION\n(Optional, may not always return desired colour)");
 	        }
 	    });
 	    
-	    // LOCATE USER
+	    // CALL FUNCTION TO LOCATE USER
 	    displayLocation();
  
-        Group root = new Group();
+        Group root = new Group(); // Root container
         
         pb.setStyle("-fx-accent: SpringGreen;");
  
+        // **** SET TABLE COLUMNS ****
         TableColumn columnF1 = new TableColumn("Year");
-        columnF1.setCellValueFactory(
-                new PropertyValueFactory<>("year"));
+        columnF1.setCellValueFactory(new PropertyValueFactory<>("year"));
  
         TableColumn columnF2 = new TableColumn("Make");
-        columnF2.setCellValueFactory(
-                new PropertyValueFactory<>("make"));
+        columnF2.setCellValueFactory(new PropertyValueFactory<>("make"));
  
         TableColumn columnF3 = new TableColumn("Model");
-        columnF3.setCellValueFactory(
-                new PropertyValueFactory<>("model"));
+        columnF3.setCellValueFactory(new PropertyValueFactory<>("model"));
  
+        // Set table data
         tableView.setItems(dataList);
         tableView.getColumns().addAll(columnF1, columnF2, columnF3);
         tableView.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
         
+        // **** Add click listener to allow user to d=start by double clicking ****
         tableView.setRowFactory( tv -> {
             TableRow<Car> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -237,12 +253,13 @@ public class CarTable extends Application {
             return row ;
         });
         
-        TextField filterField = new TextField();
+        TextField filterField = new TextField(); // Text field to filter table values
         
         status = new Label("Awaiting selection\nPress button or double click cell once finished.\n\nCOLOUR SELECTION\n"
         		+ "(Optional, may not always return desired colour)");
         status.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
         
+        // Filtered list of cars to match text field
         FilteredList<Car> filteredData = new FilteredList<>(dataList, p -> true);
         
         //*** ALLOW USER TO FILTER PRICE FOR EBAY API SEARCH
@@ -251,6 +268,7 @@ public class CarTable extends Application {
         maxPriceSlider.setMax(500000.00);
         maxPriceSlider.setValue(250000.00);
         
+        // Pricing slider change listener
         maxPriceSlider.valueProperty().addListener(new ChangeListener<Object>() 
         {
             @Override
@@ -264,7 +282,7 @@ public class CarTable extends Application {
         
         //**** SELECT A CAR FROM THE TABLE*****
         Button get = new Button("Get Car");
-        get.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
+        get.setStyle(buttonStyle);
         HBox startIt = new HBox(get, pb);
         HBox setIt = new HBox(maxPriceSlider, max);
         startIt.setSpacing(24);
@@ -550,8 +568,9 @@ public class CarTable extends Application {
             });
             new Thread(sleeper).start();
     	}
-    	
+
     	searchEbay();
+    	
     }
     
     private static void getVideo() throws IOException, JSONException
@@ -565,7 +584,7 @@ public class CarTable extends Application {
 		keyword = keyword.replace(" ", "+");
 		 
 		// The url for the API call
-		String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=rating&q=" + keyword + "&key=AIzaSyAL0xSUWCnUTe6HWjx72AfoAwsTB5AF6i4";
+		String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=rating&q=" + keyword + "&key=AIzaSyCspSmoh2isFf75zHSNnuBZXvqOf81Pmj8";
 		 
 		//Get JSON object
 		Document doc = Jsoup.connect(url).timeout(10 * 1000).ignoreContentType(true).get();
@@ -722,8 +741,7 @@ public class CarTable extends Application {
     	});
     	
     	Button proceed = new Button("Start!");
-        proceed.setStyle("    -fx-font-size: 11pt;\n" + 
-        		"    -fx-font-family: \"Helvetica\";");
+        proceed.setStyle(buttonStyle);
     	proceed.setOnAction((ActionEvent a) -> {
     		layout.getSelectionModel().select(tB);
     	});
@@ -739,7 +757,18 @@ public class CarTable extends Application {
     {
     	//I created a separate class to use the ebay product finding API
     	EbaySearcher ebaySearcher = new EbaySearcher();
-    	Map<String, String> results = ebaySearcher.get_response(videoSearch, maxPricing);
+    	
+    	resultsEbay = new HashMap<>();
+    	
+    	if (group.isSelected())
+    	{
+    		resultsEbay = ebaySearcher.get_response(videoSearch, maxPricing, country);
+    	}
+    	else
+    	{
+    		resultsEbay = ebaySearcher.get_response(videoSearch, maxPricing, "");
+    	}
+    	
     	
     	
     	Label l1 = new Label(""),l2 = new Label(""),l3 = new Label("");
@@ -747,48 +776,26 @@ public class CarTable extends Application {
     	try
     	{
     	
-    		l1 = new Label((results.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
+    		l1 = new Label((resultsEbay.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
     		l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
 
-    		l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id") + "\nLocated in " + results.get("location"));
+    		l2 = new Label(resultsEbay.get("car") + "\nDepartment: " + resultsEbay.get("id") + "\nLocated in " + resultsEbay.get("location"));
     		l2.setStyle("    -fx-font-size: 16pt;\n-fx-font-family: \"Helvetica\";");
 
-    		l3 = new Label("Current Price: " + NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(Double.parseDouble(results.get("price"))));
+    		l3 = new Label("Current Price: " + NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(Double.parseDouble(resultsEbay.get("price"))));
     		l3.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
     	}
-    	catch (NullPointerException e)
+    	catch (java.lang.NullPointerException e)
     	{
     		System.out.println("Tags not available");
     	}
 
-    	
-	    WebView webview = new WebView();
-	    webview.getEngine().load(
-	      results.get("imageURL")
-	    );
-	    
-	    ObservableList<String> p = FXCollections.observableArrayList(results.get("paymentMethod").replaceAll("\"", "").split(","));
-	    
-	    ComboBox<String> paymentMethods = new ComboBox<>(p);
-	    paymentMethods.setPromptText("Payment Methods");
-	    paymentMethods.setStyle("    -fx-text-fill        : #006464;\n" + 
-	    		"    -fx-background-color : SpringGreen;\n" + 
-	    		"    -fx-border-radius    : 20;\n" + 
-	    		"    -fx-background-radius: 20;\n" + 
-	    		"    -fx-font-family: \"Helvetica\";\n" + 
-	    		"-fx-padding : 5;");
-	    
 	    Button searchEbay = new Button("View on Ebay.com");
-	    searchEbay.setStyle("    -fx-text-fill    : black;\n" + 
-	    		"    -fx-background-color : white;\n" + 
-	    		"    -fx-border-color : green;\n" + 
-	    		"    -fx-border-radius: 5;\n" + 
-	    		"    -fx-font-family: \"Helvetica\";\n" +
-	    		"-fx-padding : 3 6 6 6;");
+	    searchEbay.setStyle(buttonStyle);
 	    
 	    searchEbay.setOnAction((ActionEvent ae) -> {
 	        try {
-	            Desktop.getDesktop().browse(new URL(results.get("itemURL")).toURI());
+	            Desktop.getDesktop().browse(new URL(resultsEbay.get("itemURL")).toURI());
 	        } 
 	        // Catch io exception
 	        catch (IOException e) {
@@ -798,13 +805,47 @@ public class CarTable extends Application {
 	        catch (URISyntaxException e) {
 	            e.printStackTrace();
 	        }
+	    	catch (java.lang.NullPointerException e)
+	    	{
+	    		System.out.println("Tags not available");
+	    	}
 	    });
     	
+	    VBox vbox = new VBox();
+	    ObservableList<String> p = null;
+	    
+    	try
+    	{
+    
+    	    
+    	    p = FXCollections.observableArrayList(resultsEbay.get("paymentMethod").replaceAll("\"", "").split(","));
+    	    
+  
+    	}
+    	catch (java.lang.NullPointerException e)
+    	{
+    		System.out.println("No payment methods");
+    	}
+
+	    WebView webview = new WebView();
+	    webview.getEngine().load(
+	      resultsEbay.get("imageURL")
+	    );
+	    
+  	    ComboBox<String> paymentMethods = new ComboBox<>(p);
+	    paymentMethods.setPromptText("Payment Methods");
+	    paymentMethods.setStyle("    -fx-text-fill        : #006464;\n" + 
+	    		"    -fx-background-color : SpringGreen;\n" + 
+	    		"    -fx-border-radius    : 20;\n" + 
+	    		"    -fx-background-radius: 20;\n" + 
+	    		"    -fx-font-family: \"Helvetica\";\n" + 
+	    		"-fx-padding : 5;");
+	    
     	HBox nameLocation = new HBox(webview);
     	nameLocation.setPrefWidth(200);
     	nameLocation.setPrefHeight(200);
     	
-    	VBox vbox = new VBox(l1, nameLocation, l2, l3, paymentMethods, searchEbay);
+    	vbox.getChildren().addAll(l1, nameLocation, l2, l3, paymentMethods, searchEbay);
     	vbox.setPadding(new Insets(10,10,20,20));
     	vbox.setSpacing(10);
     	
