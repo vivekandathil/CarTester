@@ -39,7 +39,7 @@ public class EbaySearcher
 	{
 		
 	}
-	public HashMap<String, String> get_response(String name) throws IOException, JSONException
+	public HashMap<String, String> get_response(String name, double pricing) throws IOException, JSONException
 	{
 		//format spaces properly for the api search
 		name = name.replace(" ", "%20");
@@ -48,7 +48,7 @@ public class EbaySearcher
 		HashMap<String, String> properties = new HashMap<String, String>();
 		
 		//Url to perform API call to ebay's finding service
-		String url = "http://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findItemsAdvanced&SERVICE-VERSION=1.12.0&SECURITY-APPNAME=VivekKan-Car-PRD-a79658d5d-28f5bcc7&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&paginationInput.entriesPerPage=2&keywords=" + name + "&categoryId=6001&descriptionSearch=true&descriptionSearch=false&outputSelector=PictureURLLarge";
+		String url = "http://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findItemsAdvanced&SERVICE-VERSION=1.12.0&SECURITY-APPNAME=VivekKan-Car-PRD-a79658d5d-28f5bcc7&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&paginationInput.entriesPerPage=2&keywords=" + name + "&categoryId=6001&MaxPrice=" + String.valueOf(pricing) + "&descriptionSearch=true&descriptionSearch=false&outputSelector=PictureURLLarge";
 		
 		System.out.println("Making API Call: " + url);
 		
@@ -123,6 +123,10 @@ public class EbaySearcher
 				
 			}
 			catch (JSONException e)
+			{
+				System.out.println("Tag missing or no search results found");
+			}
+			catch (NullPointerException e)
 			{
 				System.out.println("Tag missing or no search results found");
 			}

@@ -65,6 +65,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
@@ -119,6 +120,7 @@ public class CarTable extends Application {
     static String modelName = "";
     static String colour = "";
     static ArrayList<String> urlList = new ArrayList<>();
+    static double maxPricing = 500000.00;
     
     static ProgressBar pb = new ProgressBar(0);
     static ImageView displayCar = new ImageView();
@@ -239,10 +241,28 @@ public class CarTable extends Application {
         
         FilteredList<Car> filteredData = new FilteredList<>(dataList, p -> true);
         
+        //*** ALLOW USER TO FILTER PRICE FOR EBAY API SEARCH
+        final Label max = new Label("Set A Max Price Range");
+        final Slider maxPriceSlider = new Slider();
+        maxPriceSlider.setMax(1000000.00);
+        maxPriceSlider.setValue(500000.00);
+        
+        maxPriceSlider.valueProperty().addListener(new ChangeListener<Object>() 
+        {
+            @Override
+            public void changed(ObservableValue arg0, Object arg1, Object arg2) 
+            {
+            	maxPricing = maxPriceSlider.getValue();
+            	max.textProperty().setValue(String.valueOf(NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(maxPricing)));
+
+            }
+        });
+        
         //**** SELECT A CAR FROM THE TABLE*****
         Button get = new Button("Get Car");
         get.setStyle("    -fx-font-size: 10pt;\n" + "    -fx-font-family: \"Helvetica\";");
-        HBox startIt = new HBox(get, download);
+        HBox startIt = new HBox(get, pb);
+        HBox setIt = new HBox(maxPriceSlider, max);
         startIt.setSpacing(24);
         
         //Event listener that gets a car object from the table cell that the User selects
@@ -328,7 +348,7 @@ public class CarTable extends Application {
         });
  
         //Vertical container to store the table
-        VBox vbox1 = new VBox(filterField, startIt, pb, status, colorChooser);
+        VBox vbox1 = new VBox(filterField, startIt, setIt, status, colorChooser);
         vbox1.setSpacing(10);
         VBox vbox2 = new VBox(tableView, suggestion, addACar(), history);
         vbox2.setSpacing(10);
@@ -623,9 +643,12 @@ public class CarTable extends Application {
     	//Label for instructions
     	Label instructions = new Label();
     	instructions.setText("Welcome to the car searcher!\nThis program will allow you to search through an expansive "
-    			+ "list of cars and find a car make/model\nof your choice. Go to the next tab to proceed. You will find a "
-    			+ "table that lists all of the cars in the\ndatabase. Use the search filter below the table to find a car. "
-    			+ "Select the cell and click on the\nGet Car Button to get your car!\n\n(Note: I am basing the car data off of a "
+    			+ "list of cars and find a car make\nand model of your choice. Go to the next tab to proceed. You will find a "
+    			+ "table that lists all\nof the cars in the database. Use the search filter below the table to find a car. "
+    			+ "\n\nSelect the cell, a colour (optional) and price range. Double click on the car in the table or\nclick on the Get Car Button to view an image of your car.\nAdditionally, the program will"
+    			+ "automatically generate a youtube review for your car\n(Warning: it may not always show the right results)\n"
+    			+ "Finally, the last tab will load information on your selected car if it can be found on ebay.\nPricing information, location"
+    			+ ", and payment methods will be displayed, along with a button\nfor you to view the car on ebay.\n\n(Note: I am basing the car data off of a "
     			+ "CSV file that I retrieved from the internet)\n\n");
         instructions.setStyle("    -fx-font-size: 11pt;\n" + 
         		"    -fx-font-family: \"Helvetica\";");
@@ -661,16 +684,28 @@ public class CarTable extends Application {
     {
     	//I created a separate class to use the ebay product finding API
     	EbaySearcher ebaySearcher = new EbaySearcher();
-    	Map<String, String> results = ebaySearcher.get_response(videoSearch);
+    	Map<String, String> results = ebaySearcher.get_response(videoSearch, maxPricing);
     	
-    	Label l1 = new Label((results.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
-    	l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
     	
-    	Label l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id") + "\nLocated in " + results.get("location"));
-    	l2.setStyle("    -fx-font-size: 16pt;\n-fx-font-family: \"Helvetica\";");
+    	Label l1 = new Label(""),l2 = new Label(""),l3 = new Label("");
     	
-    	Label l3 = new Label("Current Price: " + NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(Double.parseDouble(results.get("price"))));
-    	l3.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
+    	try
+    	{
+    	
+    		l1 = new Label((results.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
+    		l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
+
+    		l2 = new Label(results.get("car") + "\nDepartment: " + results.get("id") + "\nLocated in " + results.get("location"));
+    		l2.setStyle("    -fx-font-size: 16pt;\n-fx-font-family: \"Helvetica\";");
+
+    		l3 = new Label("Current Price: " + NumberFormat.getCurrencyInstance(new Locale("en", "US")).format(Double.parseDouble(results.get("price"))));
+    		l3.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
+    	}
+    	catch (NullPointerException e)
+    	{
+    		System.out.println("Tags not available");
+    	}
+
     	
 	    WebView webview = new WebView();
 	    webview.getEngine().load(
