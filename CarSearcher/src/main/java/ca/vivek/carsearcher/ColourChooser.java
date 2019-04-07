@@ -19,7 +19,7 @@ import javafx.stage.StageStyle;
 
 class ColorChooser extends VBox {
 	  private final double GOLDEN_RATIO = 1.618;
-	  private final double MIN_TILE_SIZE = 5;
+	  private final double MIN_TILE_SIZE = 10;
 	  private final double nColumns;
 	  private final double nRows;
 	 
@@ -129,7 +129,7 @@ class ColorChooser extends VBox {
 	      GridPane.setRowIndex(colorChoice,    i / (int) nColumns);
 	      GridPane.setColumnIndex(colorChoice, i % (int) nColumns);
 	      colorChoice.setMinSize(MIN_TILE_SIZE, MIN_TILE_SIZE);
-	      colorChoice.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+	      colorChoice.setMaxSize(50, 50);
 	 
 	      // add a mouseover tooltip to display more info on the colour being examined.
 	      // todo it would be nice to be able to have the tooltip appear immediately on mouseover, but there is no easy way to do this, (file jira feature request?)

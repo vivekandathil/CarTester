@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -73,6 +75,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -119,6 +123,7 @@ public class CarTable extends Application {
     static String videoSearch = "";
     static String modelName = "";
     static String colour = "";
+    static String city = "", region = "", country = "", currency = "";
     static ArrayList<String> urlList = new ArrayList<>();
     static double maxPricing = 500000.00;
     
@@ -130,6 +135,7 @@ public class CarTable extends Application {
     static ComboBox<String> history;
     static Stage stage;
     static CheckBox download = new CheckBox("Download Video Review");
+    static CheckBox group, currencyConvert;
 
     //I got this function from the Bing API documentation
     private static SearchResults SearchImages (String searchQuery) throws Exception 
@@ -171,7 +177,7 @@ public class CarTable extends Application {
     private static Car car;
  
 	@Override
-    public void start(Stage primaryStage) 
+    public void start(Stage primaryStage) throws IOException, JSONException 
 	{
 		this.stage = primaryStage;
 		
@@ -198,6 +204,9 @@ public class CarTable extends Application {
 	        			+ "COLOUR SELECTION\n(Optional, may not always return desired colour)");
 	        }
 	    });
+	    
+	    // LOCATE USER
+	    displayLocation();
  
         Group root = new Group();
         
@@ -244,8 +253,8 @@ public class CarTable extends Application {
         //*** ALLOW USER TO FILTER PRICE FOR EBAY API SEARCH
         final Label max = new Label("Set A Max Price Range");
         final Slider maxPriceSlider = new Slider();
-        maxPriceSlider.setMax(1000000.00);
-        maxPriceSlider.setValue(500000.00);
+        maxPriceSlider.setMax(500000.00);
+        maxPriceSlider.setValue(250000.00);
         
         maxPriceSlider.valueProperty().addListener(new ChangeListener<Object>() 
         {
@@ -334,6 +343,12 @@ public class CarTable extends Application {
         
         history = new ComboBox<>();
         history.setPromptText("Search History");
+	    history.setStyle("    -fx-text-fill        : #006464;\n" + 
+	    		"    -fx-background-color : SpringGreen;\n" + 
+	    		"    -fx-border-radius    : 20;\n" + 
+	    		"    -fx-background-radius: 20;\n" + 
+	    		"    -fx-font-family: \"Helvetica\";\n" + 
+	    		"-fx-padding : 5;");
         
         //I imported a colour chooser object from github to allow the user to specify the car colour
         final ColorChooser colorChooser = new ColorChooser(palette);
@@ -346,9 +361,21 @@ public class CarTable extends Application {
         		colour = colorChooser.getChosenColorName();
         	}
         });
+        
+        // **** Ask user if he/she wants to filter by their region ****
+        Label locationInformation = new Label("You are located in " + city + ", " + region + ", " + country + "\nFilter your ebay searches to nearby sellers?");
+        locationInformation.setStyle("    -fx-font-size: 11pt;\n" + "    -fx-font-family: \"Helvetica\";");
+        group = new CheckBox("Nearby Sellers Only");
+        currencyConvert = new CheckBox("Convert Currency to " + currency + "?");
+        group.setUserData(Color.LIGHTGREEN);
+        group.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;");
+        currencyConvert.setUserData(Color.LIGHTGREEN);
+        currencyConvert.setStyle("    -fx-font-size: 10pt;\n-fx-base: SpringGreen;");
+        VBox locationVbox = new VBox(locationInformation, group, currencyConvert);
+        locationVbox.setSpacing(14);
  
         //Vertical container to store the table
-        VBox vbox1 = new VBox(filterField, startIt, setIt, status, colorChooser);
+        VBox vbox1 = new VBox(filterField, startIt, setIt, status, colorChooser, locationVbox);
         vbox1.setSpacing(10);
         VBox vbox2 = new VBox(tableView, suggestion, addACar(), history);
         vbox2.setSpacing(10);
@@ -371,6 +398,37 @@ public class CarTable extends Application {
  
         readCSV();
     }
+	
+	private void displayLocation() throws IOException, JSONException
+	{
+        // Find public IP address 
+        String systemipaddress = "";
+        
+        try
+        { 
+            URL url_name = new URL("http://bot.whatismyipaddress.com"); 
+  
+            BufferedReader sc = new BufferedReader(new InputStreamReader(url_name.openStream())); 
+  
+            // reads system IPAddress 
+            systemipaddress = sc.readLine().trim();
+        } 
+        catch (Exception e) 
+        { 
+            System.out.println("Cannot Execute Properly");
+        }
+        
+        System.out.println("Your Public IP Address is: " + systemipaddress);
+        
+    	CityLookup locationfinder = new CityLookup();
+    	locationfinder.findLocation(systemipaddress);
+    	
+    	// Set all the region variables
+    	city = locationfinder.getCity();
+    	country = locationfinder.getCountry();
+    	region = locationfinder.getRegion();
+    	currency = locationfinder.getCurrency();
+	}
  
     private void readCSV() 
     {
