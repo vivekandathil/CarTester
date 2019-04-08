@@ -183,7 +183,7 @@ public class CarTable extends Application {
     private static Car car; // Car object for table selection
  
 	@Override
-    public void start(Stage primaryStage) throws IOException, JSONException 
+    public void start(Stage primaryStage) throws Exception 
 	{
 		// Stage needs to be accessible in multiple methods
 		this.stage = primaryStage;
@@ -378,7 +378,7 @@ public class CarTable extends Application {
         });
         
         // **** Ask user if he/she wants to filter by their region ****
-        Label locationInformation = new Label("You are located in " + city + ", " + region + ", " + country + "\nFilter your ebay searches to nearby sellers?");
+        Label locationInformation = new Label("Looks like you're located in " + city + ", " + region + ", " + country + "\nFilter your ebay searches to nearby sellers?");
         locationInformation.setStyle("    -fx-font-size: 11pt;\n" + "    -fx-font-family: \"Helvetica\";");
         group = new CheckBox("Nearby Sellers Only");
         currencyConvert = new CheckBox("Convert Currency to " + currency + "?");
@@ -515,6 +515,15 @@ public class CarTable extends Application {
         	
         	Button save = new Button("Save Image");
         	save.setOnAction(e -> saveImages(output));
+        	
+        	Button viewInstagram = new Button("instagramview");
+        	save.setOnAction(e -> {
+				try {
+					searchInstagram();
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			});
         	
         	//**** FORMATTING IMAGE OUTPUT ****
         	displayCar = new ImageView(output);
@@ -729,8 +738,7 @@ public class CarTable extends Application {
     	
     	//Exit button
     	Button exit = new Button("Exit");
-        exit.setStyle("    -fx-font-size: 11pt;\n" + 
-        		"    -fx-font-family: \"Helvetica\";");
+        exit.setStyle(buttonStyle);
     	exit.setOnAction(actionevent -> {
     		Alert alert = new Alert(AlertType.CONFIRMATION, "Exit?", ButtonType.YES, ButtonType.CANCEL);
     		alert.showAndWait();
@@ -901,6 +909,32 @@ public class CarTable extends Application {
         
         return resultURL;  
     }  
+    
+    
+    
+    
+    
+    
+    private static void searchInstagram() throws Exception
+    {
+    	InstagramClient a = new InstagramClient();
+    	
+    	List<Image> instagramPictures = new ArrayList<>();
+    	
+    	//Not to confuse with the standard media object from the java library
+    	List<me.postaddict.instagram.scraper.model.Media> urls = a.setUp("fordmustang");
+    	
+        for (int i = 0; i < urls.size(); i++)
+        {
+        	instagramPictures.add(new Image(urls.get(i).getDisplayUrl()));
+        }
+
+    	
+    }
+    
+    
+    
+    
     
     public static void main(String[] args) {
         launch(args);

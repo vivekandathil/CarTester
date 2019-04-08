@@ -68,7 +68,7 @@ public class EbaySearcher
 		int responseCode = con.getResponseCode();
 		
 		//Logging purposes: Print out response code (200 = good, 401 = invalid key)
-		System.out.println("Response Code : " + responseCode);
+		System.out.println("Response Code : " + responseCode + "\n---------------");
 		
 		//RECIEVE JSON AND PARSE
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
