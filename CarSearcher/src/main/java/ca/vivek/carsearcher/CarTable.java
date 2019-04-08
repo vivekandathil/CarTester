@@ -207,10 +207,6 @@ public class CarTable extends Application {
 		createMainMenu(tA); // Call method to add menu components
 		
 		
-		
-		searchInstagram();
-		
-		
 		//This resets all settings when the tab is entered
 	    tB.setOnSelectionChanged(event -> 
 	    {
@@ -522,15 +518,6 @@ public class CarTable extends Application {
         	Button save = new Button("Save Image");
         	save.setOnAction(e -> saveImages(output));
         	
-        	Button viewInstagram = new Button("instagramview");
-        	save.setOnAction(e -> {
-				try {
-					searchInstagram();
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			});
-        	
         	//**** FORMATTING IMAGE OUTPUT ****
         	displayCar = new ImageView(output);
             displayCar.setFitWidth(600);
@@ -648,7 +635,19 @@ public class CarTable extends Application {
     		layout.getSelectionModel().select(tB);
     	});
     	
-    	HBox components = new HBox(startAgain, save);
+    	Image instagramlogo = new Image("logo.png");
+    	
+    	Button searchInsta = new Button();
+        searchInsta.setGraphic(new ImageView(instagramlogo));
+        searchInsta.setOnAction((ActionEvent ae) -> {
+                try {
+					searchInstagram();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+        });
+    	
+    	HBox components = new HBox(startAgain, save, searchInsta);
     	components.setPadding(new Insets(20,20,20,20));
     	components.setSpacing(10);
     	
@@ -789,7 +788,6 @@ public class CarTable extends Application {
     	
     	try
     	{
-    	
     		l1 = new Label((resultsEbay.get("car") == null) ? "No cars found on ebay\n" : "Your car was found on eBay!\n");
     		l1.setStyle("    -fx-font-size: 29pt;\n-fx-font-family: \"Helvetica\";");
 
@@ -914,18 +912,17 @@ public class CarTable extends Application {
         }
         
         return resultURL;  
-    }  
-    
-    
-    
-    
-    
+    }
     
     private static void searchInstagram() throws Exception
     {
+    	// I created a separate class for the instagram client
     	InstagramClient a = new InstagramClient();
     	
-    	String tag = "ferrarif430".toLowerCase();
+    	// tag to search for
+    	String tag = (car.getMake() + car.getModel()).replaceAll(" ", "").toLowerCase();
+    	
+    	System.out.println(tag);
     	
     	List<Image> instagramPictures = new ArrayList<>();
     	
@@ -941,13 +938,7 @@ public class CarTable extends Application {
         ImageSlideshow instagram = new ImageSlideshow();
         
         tF.setContent(instagram.create(instagramPictures, "#" + tag));
-        
-        
     }
-    
-    
-    
-    
     
     public static void main(String[] args) {
         launch(args);
