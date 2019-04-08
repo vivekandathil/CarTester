@@ -47,7 +47,7 @@ public class InstagramClient
         
         Instagram instagram = new Instagram(httpClient);
         Tag tag = client.getMediasByTag(hashtag, 2);
-        List<Media> list = tag.getMediaRating().getMedia().getNodes();
+        List<Media> list = tag.getMediaRating().getTopPosts();
 
         return list;
     }

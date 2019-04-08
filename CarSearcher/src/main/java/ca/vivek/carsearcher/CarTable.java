@@ -137,7 +137,7 @@ public class CarTable extends Application {
     static ImageView displayCar = new ImageView();
     static Label status;
     static TabPane layout;
-    static Tab tE, tD, tC, tB, tA;
+    static Tab tF, tE, tD, tC, tB, tA;
     static ComboBox<String> history;
     static Stage stage;
     static CheckBox download = new CheckBox("Download Video Review");
@@ -202,8 +202,14 @@ public class CarTable extends Application {
 		tC = new Tab("Image"); // Display image
 		tD = new Tab("Car Reviews"); // YouTube review
 		tE = new Tab("Purchase"); // ebay search
+		tF = new Tab("Instagram");
 		
 		createMainMenu(tA); // Call method to add menu components
+		
+		
+		
+		searchInstagram();
+		
 		
 		//This resets all settings when the tab is entered
 	    tB.setOnSelectionChanged(event -> 
@@ -406,7 +412,7 @@ public class CarTable extends Application {
         //Put all content into second tab
 		tB.setContent(root);
 		
-		layout.getTabs().addAll(tA, tB, tC, tD, tE);
+		layout.getTabs().addAll(tA, tB, tC, tD, tE, tF);
  
         primaryStage.setScene(new Scene(layout, 800, 600));
         primaryStage.show();
@@ -919,17 +925,24 @@ public class CarTable extends Application {
     {
     	InstagramClient a = new InstagramClient();
     	
+    	String tag = "ferrarif430".toLowerCase();
+    	
     	List<Image> instagramPictures = new ArrayList<>();
     	
     	//Not to confuse with the standard media object from the java library
-    	List<me.postaddict.instagram.scraper.model.Media> urls = a.setUp("fordmustang");
+    	List<me.postaddict.instagram.scraper.model.Media> urls = a.setUp(tag);
     	
-        for (int i = 0; i < urls.size(); i++)
+        for (int i = 0; i < urls.size() / 2; i++)
         {
+        	System.out.println(urls.get(i).getDisplayUrl());
         	instagramPictures.add(new Image(urls.get(i).getDisplayUrl()));
         }
-
-    	
+        
+        ImageSlideshow instagram = new ImageSlideshow();
+        
+        tF.setContent(instagram.create(instagramPictures, "#" + tag));
+        
+        
     }
     
     
