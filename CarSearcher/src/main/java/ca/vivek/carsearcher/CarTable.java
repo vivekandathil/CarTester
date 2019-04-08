@@ -56,6 +56,7 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -81,6 +82,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
@@ -117,7 +119,7 @@ public class CarTable extends Application {
     final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46"; // Key for Bing API  
     final static String host = "https://api.cognitive.microsoft.com"; //URI for API endpoint
     final static String path = "/bing/v7.0/images/search";
-    static String searchTerm = "", videoSearch = "", modelName = "", colour = ""; // Used for car properties
+    static String searchTerm = "", videoSearch = "", modelName = "", colour = "", tag = ""; // Used for car properties
     static String city = "", region = "", country = "", currency = ""; // Used for user's location properties
     static ArrayList<String> urlList = new ArrayList<>(); // CURRENTLY UNUSED, for multiple search results
     static Map<String, String> resultsEbay;
@@ -408,7 +410,7 @@ public class CarTable extends Application {
         //Put all content into second tab
 		tB.setContent(root);
 		
-		layout.getTabs().addAll(tA, tB, tC, tD, tE, tF);
+		layout.getTabs().addAll(tA, tB, tF, tC, tD, tE);
  
         primaryStage.setScene(new Scene(layout, 800, 600));
         primaryStage.show();
@@ -511,23 +513,27 @@ public class CarTable extends Application {
         	// Exclude the colour name for the video search
         	videoSearch = modelName;
         	
+        	// tag to search instagram for
+        	tag = (car.getMake() + car.getModel()).replaceAll(" ", "").toLowerCase();
+        	
         	String url = search(status);
         	
         	Image output = new Image(url);
         	
         	Button save = new Button("Save Image");
         	save.setOnAction(e -> saveImages(output));
+        	save.setStyle(buttonStyle);
         	
         	//**** FORMATTING IMAGE OUTPUT ****
         	displayCar = new ImageView(output);
-            displayCar.setFitWidth(600);
-            displayCar.setFitHeight(400);
+            displayCar.setFitWidth(500);
+            displayCar.setFitHeight(300);
             displayCar.setPreserveRatio(true);
             displayCar.setSmooth(true);
             displayCar.setCache(true);
+            displayCar.setStyle("-fx-border-color: black; -fx-border-width: 4;");
         	
         	VBox img = new VBox(displayCar);
-        	img.setStyle("-fx-border-color: black; -fx-border-width: 10;");
         	
         	//Call separate format output function and use returned vbox
         	VBox tab = formatOut(img, save);
@@ -623,35 +629,42 @@ public class CarTable extends Application {
     
     private static VBox formatOut(VBox image, Button save)
     {
-    	VBox output = new VBox();
-    	output.setPadding(new Insets(20,20,20,20));
-    	output.setSpacing(10);
     	
     	Label title = new Label(searchTerm);
-    	title.setStyle("    -fx-font-size: 29pt;\n" + "    -fx-font-family: \"Helvetica\";");
+    	title.setStyle("    -fx-font-size: 24pt;\n" + "    -fx-font-family: \"Helvetica\";");
     	
     	Button startAgain = new Button("Search for a new Car");
+    	startAgain.setStyle(buttonStyle);
     	startAgain.setOnAction((ActionEvent ae) -> {
     		layout.getSelectionModel().select(tB);
     	});
+    	
+        Label aa = new Label("Search Instagram for #" + tag + "?");
+        aa.setStyle("    -fx-font-size: 14pt;\n" + "    -fx-font-family: \"Helvetica\";");
     	
     	Image instagramlogo = new Image("logo.png");
     	
     	Button searchInsta = new Button();
         searchInsta.setGraphic(new ImageView(instagramlogo));
+        searchInsta.setStyle(buttonStyle);
         searchInsta.setOnAction((ActionEvent ae) -> {
                 try {
+                	aa.setText("Searching...");
 					searchInstagram();
+					aa.setText("Results found! Switch to Instagram Tab");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
         });
-    	
-    	HBox components = new HBox(startAgain, save, searchInsta);
-    	components.setPadding(new Insets(20,20,20,20));
-    	components.setSpacing(10);
-    	
-    	output.getChildren().addAll(title, image, components);
+        
+
+        
+        HBox buttons = new HBox(startAgain, save);
+        buttons.setSpacing(10);
+        
+        VBox output = new VBox(title, image, aa, searchInsta, buttons);
+        output.setSpacing(10);
+        output.setPadding(new Insets(10,40,10,180));
     	
     	return output;
     }
@@ -918,9 +931,6 @@ public class CarTable extends Application {
     {
     	// I created a separate class for the instagram client
     	InstagramClient a = new InstagramClient();
-    	
-    	// tag to search for
-    	String tag = (car.getMake() + car.getModel()).replaceAll(" ", "").toLowerCase();
     	
     	System.out.println(tag);
     	
