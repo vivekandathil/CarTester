@@ -116,7 +116,7 @@ import javafx.stage.Stage;
 public class CarTable extends Application {
 	
 	//***** CLASS VARIABLES *****
-    final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46"; // Key for Bing API  
+    final static String subscriptionKey = ""; // Key for Bing API  
     final static String host = "https://api.cognitive.microsoft.com"; //URI for API endpoint
     final static String path = "/bing/v7.0/images/search";
     static String searchTerm = "", videoSearch = "", modelName = "", colour = "", tag = ""; // Used for car properties
