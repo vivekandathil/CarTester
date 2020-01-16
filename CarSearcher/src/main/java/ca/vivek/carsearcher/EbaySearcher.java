@@ -55,7 +55,7 @@ public class EbaySearcher
 		
 		//Url to perform API call to ebay's finding service
 		String url = "http://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findItemsAdvanced&SERVICE-VERSION=1.12.0&"
-		+ "SECURITY-APPNAME=VivekKan-Car-PRD-a79658d5d-28f5bcc7&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&paginationInput.entriesPerPage=2&keywords="
+		+ "SECURITY-APPNAME=VivekKan-Car-PRD-<key>&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&paginationInput.entriesPerPage=2&keywords="
 		+ name + "&categoryId=6001&MaxPrice=" + String.valueOf(pricing) + countryCodeList.get(country)
 		+ "&descriptionSearch=true&descriptionSearch=false&outputSelector=PictureURLLarge";
 		
