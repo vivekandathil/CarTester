@@ -103,7 +103,7 @@ public class CarTable extends Application {
 	
 	//***** CLASS VARIABLES *****
     //API Key (expires in 7 days, I need to reactivate)
-    final static String subscriptionKey = "a39875d05fe041daace25c8153bc4c46";
+    final static String subscriptionKey = "";
 
     //URI for API endpoint
     final static String host = "https://api.cognitive.microsoft.com";
